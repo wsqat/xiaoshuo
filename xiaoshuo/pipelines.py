@@ -21,7 +21,7 @@ class XiaoshuoPipeline(object):
     def __init__(self):
         # 写入csv文件
         # self.csvfile = open('test.csv', 'wb')  # 小说 重新写入
-        self.csvfile = open('20171023.csv', 'ab')  # 小说 追加写入
+        self.csvfile = open('20171103.csv', 'ab')  # 小说 追加写入
         self.csvfile.write(codecs.BOM_UTF8) # 防止乱码
         self.csvwriter = csv.writer(self.csvfile,  delimiter=',') #将数据作为一系列以逗号分隔的值
         # global count

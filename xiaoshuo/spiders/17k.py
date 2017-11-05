@@ -19,8 +19,6 @@ class SeventeenK(scrapy.Spider):
     # start_urls = ['http://all.17k.com/lib/book/2_0_0_0_0_0_0_0_%s.html?' % i for i in [1,200,400]]
     # start_urls = ['http://all.17k.com/lib/book/2_0_0_0_0_0_0_0_1.html?']
 
-
-
     def start_requests(self):
         # for i in range(1,11):
         # max_num = 7329 # 获取当前页面的最大页码数

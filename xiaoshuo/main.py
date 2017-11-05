@@ -9,7 +9,7 @@ from time import sleep
 SECONDS_PER_DAY = 24 * 60 * 60  
   
 def run_crawlall( enter_time ):  
-    # cmdline.execute("scrapy crawlall".split())
+    cmdline.execute("scrapy crawlall".split())
     print "now is "+str(datetime.now()) + "run_crawlall time is " + str(enter_time)
 
 # 规定某个时候执行此函数
@@ -17,7 +17,7 @@ def doFirst():
     curTime = datetime.now()
     print curTime
     # 当前执行时间
-    desTime = curTime.replace(year=2017,month=10,day=23,hour=19, minute=42, second=30, microsecond=0)  
+    desTime = curTime.replace(year=2017,month=11,day=3,hour=12, minute=38, second=30, microsecond=0)  
     print desTime  
     delta = desTime-curTime  
     sleeptime = delta.total_seconds()  

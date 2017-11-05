@@ -2,6 +2,9 @@
 import csv
 import pandas as pd
 import numpy as np
+from time import sleep
+import datetime
+import pymysql
 import sys
 reload(sys)
 # sys.setdefaultencoding('utf-8')
@@ -19,7 +22,8 @@ def pure_cvs_row(fname, newfname, delimiter=',',key='month'):
         writer = csv.writer(csvout, delimiter=delimiter)
         for row in reader:
             row_len = len(row)
-            if row_len == 9:
+            # if (row_len == 9) && (row[8]!=1200000000) && (row[8]!=1100000000):
+            if (row_len == 9):
                 # print row_len
                 # print row[0]
                 # 加权处理，增加热门作者
@@ -28,13 +32,13 @@ def pure_cvs_row(fname, newfname, delimiter=',',key='month'):
                 # if hotRowNum == 1:
                     # row[8] = 'month'
                 # else:
-                # 	# row[8] = str(float(row[6])*0.5 + float(float(row[7])*0.3) + float(row[8])*0.2)
-                # 	# row[8] = float(row[6])*0.5 + 
-                	# row[8] = float(row[6])*0.7 + float(row[7])*0.3
+                #   # row[8] = str(float(row[6])*0.5 + float(float(row[7])*0.3) + float(row[8])*0.2)
+                #   # row[8] = float(row[6])*0.5 + 
+                    # row[8] = float(row[6])*0.7 + float(row[7])*0.3
                 rows.append(row)
         writer.writerows(rows)
     # if key == 'author':
-    # 	sort_by_key(newfname,"rank_"+key+".csv",'author')
+    #   sort_by_key(newfname,"rank_"+key+".csv",'author')
     # else:
     sort_by_key(newfname,"rank_"+key+".csv",key)
 
@@ -51,13 +55,17 @@ def sort_by_key(fname,newfname,key):
     # new = lc.sort_values(by=['month'],ascending=True)
     # new = new.tail(20)
     if key == 'author':
-    	# lc = lc.iloc[:,[1,3]]
+        # lc = lc.iloc[:,[1,3]]
         lc = lc.groupby(by=['author'])['collects'].sum()
         lc = lc.to_frame()
         new = lc.sort_values(by=['collects'],ascending=False)
         new = new.head(20)
         # print new
         new.to_csv('热门小说作者排行榜.csv', sep=',', encoding='utf-8-sig')
+        sleep(5)
+        csvToMysql(key,newfname)
+        # new.to_csv(newfname, sep=',', encoding='utf-8-sig')
+        # del_cvs_col(key,newfname, '热门小说作者排行榜.csv', [0])
         return 
     else:
         new = lc.sort_values(by=[''+key+''],ascending=False)
@@ -73,17 +81,21 @@ def sort_by_key(fname,newfname,key):
     # else:
     #    newfname2 = "热门小说作者排行榜.csv"
 
-    del_cvs_col(newfname, newfname2, [0])
+    del_cvs_col(key,newfname, newfname2, [0])
 
 # 生成cvs文件, 删除指定列数
 # del_cvs_col('rank_click_month.csv', '本月点击排行榜.csv', [0])
-def del_cvs_col(fname, newfname, idxs, delimiter=','):
+def del_cvs_col(key,fname, newfname, idxs, delimiter=','):
+    # print key+"22"
     with open(fname) as csvin, open(newfname, 'w') as csvout:
         reader = csv.reader(csvin, delimiter=delimiter)
         writer = csv.writer(csvout, delimiter=delimiter)
         rows = (tuple(item for idx, item in enumerate(row) if idx not in idxs) for row in reader)
         writer.writerows(rows)
-
+    
+    sleep(5)
+    print key+"222"
+    csvToMysql(key,newfname)
 
 # 生成cvs文件, 加权处理，增加
 # del_cvs_col('rank_click_month.csv', '本月点击排行榜.csv', [0])
@@ -95,16 +107,66 @@ def del_cvs_col(fname, newfname, idxs, delimiter=','):
 #         writer.writerows(rows)
 
 
+# 从文件存储到mysql中
+def csvToMysql(key,fname):
+    print key
+    # 写入mysql数据库
+    # 本地mysql
+    conn = pymysql.connect(host="127.0.0.1", user="root", password="123456", db="xiaoshuo_db")
+    # 远程mysql
+    # conn = pymysql.connect(host="139.199.189.124", user="ouyong", password="hello", db="douban_movie")
+    conn.set_charset("utf8")
+    with open(fname) as csvin:
+        reader = csv.reader(csvin, delimiter=",")
+        for row in reader:
+            # 写入mysql
+            if (row[1] != "author") and (row[0] != "author") :
+
+                tabel = "novel_"+key
+                # print tabel
+                print key
+
+                time = datetime.datetime.now().strftime('%Y%m%d')
+
+                if key == 'author':
+                    author = str(row[0]).strip()
+                    collects = str(row[1]).strip()
+                    sql = 'insert into '+tabel+'(author,collects,time) values("'+author+'","'+collects+'","'+time+'");'
+                else:
+                    # novel_name,author,collects,reviews,month
+                    novel_name = str(row[0]).strip()
+                    author = str(row[1]).strip()
+                    collects = str(row[2]).strip()
+                    reviews = str(row[3]).strip()
+                    month = str(row[4]).strip()
+                    sql = "insert into "+tabel+"(name,author,collects,reviews,month,time) " \
+                      "values ('" + novel_name + "','"+ author + "','" + collects + "','"+ reviews + "','" + month + "','" + time +"');"
+                
+                # print(sql)
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(sql)
+                    conn.commit()
+                except Exception as e:
+                    print(e)
+                    conn.rollback()
+    conn.close()
+
+
 if __name__ == '__main__':
     
     # 本月点击排行榜
-    pure_cvs_row('20171023.csv', 'pure_data.csv', delimiter=',', key='month')
+    # pure_cvs_row('20171023.csv', 'pure_data.csv', delimiter=',', key='month')
+    # sleep(15)
     # 历史点击排行榜
     # pure_cvs_row('20171023.csv', 'pure_data.csv', delimiter=',', key='reviews')
+    # sleep(15)
     # 历史收藏榜
     # pure_cvs_row('20171023.csv', 'pure_data.csv', delimiter=',', key='collects')
+    # sleep(15)
     # 热门作者
     # pure_cvs_row('20171023.csv', 'pure_data.csv', delimiter=',', key='author')
+    # csvToMysql('author',"热门小说作者排行榜.csv")
 
 # import matplotlib.pyplot as plt
 # plt.rcdefaults()

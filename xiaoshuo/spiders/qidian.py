@@ -23,7 +23,7 @@ class Qidian(scrapy.Spider):
     def start_requests(self):
         # for i in range(1,11):
         # max_num = 35426 # 获取当前页面的最大页码数
-        max_num = 1000;
+        max_num = 2000;
         # max_num = 1
         print u"当前开始爬取起点小说网……"
         for i in range(1, int(max_num)+1):
